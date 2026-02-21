@@ -1,46 +1,35 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-const int MAXN = 100005;
-vector<int> adj[MAXN];
-int disc[MAXN], low[MAXN], timer;
-bool visited[MAXN];
-vector<pair<int,int>> bridges;
+vector<int> slidingWindowMax(const vector<int>& nums, int k) {
+    vector<int> result;
+    deque<int> dq; 
 
-void dfs(int u, int parent) {
-    visited[u] = true;
-    disc[u] = low[u] = ++timer;
-
-    for (int v : adj[u]) {
-        if (v == parent) continue;
-
-        if (!visited[v]) {
-            dfs(v, u);
-            low[u] = min(low[u], low[v]);
-
-            if (low[v] > disc[u])
-                bridges.push_back({u, v});
-        } else {
-            low[u] = min(low[u], disc[v]);
+    for (int i = 0; i < nums.size(); ++i) {
+        if (!dq.empty() && dq.front() == i - k) {
+            dq.pop_front();
+        }
+        while (!dq.empty() && nums[dq.back()] <= nums[i]) {
+            dq.pop_back();
+        }
+        dq.push_back(i);
+        if (i >= k - 1) {
+            result.push_back(nums[dq.front()]);
         }
     }
+
+    return result;
 }
 
 int main() {
-    int V = 5;
-    vector<pair<int,int>> edges = {
-        {0,1},{1,2},{2,0},{1,3},{3,4}
-    };
-
-    for (auto e : edges) {
-        adj[e.first].push_back(e.second);
-        adj[e.second].push_back(e.first);
+    vector<int> latencies = {1, 3, -1, -3, 5, 3, 6, 7};
+    int k = 3;
+    vector<int> maxLatencies = slidingWindowMax(latencies, k);
+    cout << "Maximum latencies for each window of size " << k << ":" << endl;
+    for (int maxVal : maxLatencies) {
+        cout << maxVal << " ";
     }
+    cout << endl;
 
-    for (int i = 0; i < V; i++)
-        if (!visited[i])
-            dfs(i, -1);
-
-    for (auto b : bridges)
-        cout << b.first << " " << b.second << "\n";
+    return 0;
 }

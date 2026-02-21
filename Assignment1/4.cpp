@@ -1,45 +1,75 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-int N;
-int cost[20][20];
-int dp[1 << 20];
+class SegmentTree {
+    vector<int> tree;
+    int n;
 
-int solve(int mask) {
-    int worker = __builtin_popcount(mask);
-
-    if (worker == N)
-        return 0;
-
-    if (dp[mask] != -1)
-        return dp[mask];
-
-    int ans = INT_MAX;
-
-    for (int task = 0; task < N; task++) {
-        if (!(mask & (1 << task))) {
-            ans = min(ans,
-                      cost[worker][task] +
-                      solve(mask | (1 << task)));
-        }
+public:
+    SegmentTree(int _n) {
+        n = _n;
+        tree.assign(4 * n, INT_MIN);
     }
 
-    return dp[mask] = ans;
-}
+    void build(const vector<int>& arr, int node, int start, int end) {
+        if (start == end) {
+            tree[node] = arr[start];
+            return;
+        }
+        int mid = (start + end) / 2;
+        build(arr, 2 * node + 1, start, mid);
+        build(arr, 2 * node + 2, mid + 1, end);
+        tree[node] = max(tree[2 * node + 1], tree[2 * node + 2]);
+    }
+
+    void update(int idx, int val, int node, int start, int end) {
+        if (start == end) {
+            tree[node] = val;
+            return;
+        }
+        int mid = (start + end) / 2;
+        if (idx <= mid) {
+            update(idx, val, 2 * node + 1, start, mid);
+        } else {
+            update(idx, val, 2 * node + 2, mid + 1, end);
+        }
+        tree[node] = max(tree[2 * node + 1], tree[2 * node + 2]);
+    }
+
+    int query(int l, int r, int node, int start, int end) {
+        if (r < start || end < l) return INT_MIN;
+        if (l <= start && end <= r) return tree[node];
+        int mid = (start + end) / 2;
+        return max(query(l, r, 2 * node + 1, start, mid),
+                   query(l, r, 2 * node + 2, mid + 1, end));
+    }
+
+    void build(const vector<int>& arr) {
+        build(arr, 0, 0, n - 1);
+    }
+
+    void update(int idx, int val) {
+        update(idx, val, 0, 0, n - 1);
+    }
+
+    int queryMax(int l, int r) {
+        return query(l, r, 0, 0, n - 1);
+    }
+};
 
 int main() {
-    N = 3;
-    int temp[3][3] = {
-        {9,2,7},
-        {6,4,3},
-        {5,8,1}
-    };
+    int N = 6;
+    vector<int> prices = {10, 20, 15, 25, 30, 5};
+    SegmentTree st(N);
+    st.build(prices);
 
-    for (int i = 0; i < N; i++)
-        for (int j = 0; j < N; j++)
-            cost[i][j] = temp[i][j];
+    cout << "Initial max in range [1,4]: " << st.queryMax(1, 4) << endl; // 20,15,25,30 -> 30
 
-    memset(dp, -1, sizeof(dp));
+    st.update(2, 35);
+    cout << "After update, max in range [1,4]: " << st.queryMax(1, 4) << endl; // 20,35,25,30 -> 35
 
-    cout << solve(0) << "\n";
+    st.update(5, 40); 
+    cout << "After update, max in range [0,5]: " << st.queryMax(0, 5) << endl; // 10,20,35,25,30,40 -> 40
+
+    return 0;
 }

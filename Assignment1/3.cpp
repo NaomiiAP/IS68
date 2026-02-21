@@ -1,70 +1,58 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-class SegmentTree {
-    vector<int> tree;
-    int n;
+const int MAXN = 100005;
+vector<int> adj[MAXN];
+int disc[MAXN], low[MAXN], timer;
+bool visited[MAXN];
+vector<pair<int, int>> bridges;
 
-public:
-    SegmentTree(vector<int>& arr) {
-        n = arr.size();
-        tree.resize(4*n);
-        build(arr, 0, 0, n-1);
-    }
+void dfs(int u, int parent) {
+    visited[u] = true;
+    disc[u] = low[u] = ++timer;
 
-    void build(vector<int>& arr, int node, int start, int end) {
-        if (start == end) {
-            tree[node] = arr[start];
+    for (int v : adj[u]) {
+        if (v == parent) continue;
+
+        if (!visited[v]) {
+            dfs(v, u);
+            low[u] = min(low[u], low[v]);
+
+            if (low[v] > disc[u]) {
+                bridges.push_back({min(u, v), max(u, v)});
+            }
         } else {
-            int mid = (start + end) / 2;
-            build(arr, 2*node+1, start, mid);
-            build(arr, 2*node+2, mid+1, end);
-            tree[node] = max(tree[2*node+1], tree[2*node+2]);
+            low[u] = min(low[u], disc[v]);
         }
     }
-
-    void update(int idx, int val, int node, int start, int end) {
-        if (start == end) {
-            tree[node] = val;
-        } else {
-            int mid = (start + end) / 2;
-            if (idx <= mid)
-                update(idx, val, 2*node+1, start, mid);
-            else
-                update(idx, val, 2*node+2, mid+1, end);
-
-            tree[node] = max(tree[2*node+1], tree[2*node+2]);
-        }
-    }
-
-    int query(int l, int r, int node, int start, int end) {
-        if (r < start || end < l)
-            return INT_MIN;
-
-        if (l <= start && end <= r)
-            return tree[node];
-
-        int mid = (start + end) / 2;
-        return max(
-            query(l, r, 2*node+1, start, mid),
-            query(l, r, 2*node+2, mid+1, end)
-        );
-    }
-
-    void update(int idx, int val) {
-        update(idx, val, 0, 0, n-1);
-    }
-
-    int query(int l, int r) {
-        return query(l, r, 0, 0, n-1);
-    }
-};
+}
 
 int main() {
-    vector<int> arr = {1,3,5,7,9,11};
-    SegmentTree st(arr);
+    int V, E;
+    cout << "Enter number of vertices and edges: ";
+    cin >> V >> E;
 
-    cout << st.query(1,4) << "\n";
-    st.update(2,10);
-    cout << st.query(1,4) << "\n";
+    for (int i = 0; i < E; ++i) {
+        int u, v;
+        cin >> u >> v;
+        adj[u].push_back(v);
+        adj[v].push_back(u);
+    }
+
+    memset(visited, 0, sizeof(visited));
+    timer = 0;
+
+    for (int i = 0; i < V; ++i) {
+        if (!visited[i]) {
+            dfs(i, -1);
+        }
+    }
+
+    cout << "Critical Links (Bridges):" << endl;
+    sort(bridges.begin(), bridges.end());
+    for (auto& b : bridges) {
+        cout << b.first << " " << b.second << endl;
+    }
+
+    return 0;
 }

@@ -1,38 +1,39 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-class StreamingMax {
-    deque<pair<int,int>> dq;
-    int k, idx;
+int N;
+vector<vector<int>> cost;
+vector<int> dp;
 
-public:
-    StreamingMax(int window) {
-        k = window;
-        idx = 0;
+int solve(int mask) {
+    if (mask == (1 << N) - 1) return 0; 
+
+    if (dp[mask] != -1) return dp[mask];
+
+    int ans = INT_MAX;
+    int worker = __builtin_popcount(mask); 
+
+    for (int task = 0; task < N; ++task) {
+        if (!(mask & (1 << task))) { // task not assigned
+            ans = min(ans, cost[worker][task] + solve(mask | (1 << task)));
+        }
     }
 
-    int add(int value) {
-        while (!dq.empty() && dq.back().first <= value)
-            dq.pop_back();
-
-        dq.push_back({value, idx});
-
-        if (!dq.empty() && dq.front().second <= idx - k)
-            dq.pop_front();
-
-        idx++;
-
-        if (idx >= k)
-            return dq.front().first;
-
-        return -1;
-    }
-};
+    return dp[mask] = ans;
+}
 
 int main() {
-    StreamingMax sm(3);
-    vector<int> arr = {1,3,-1,-3,5,3,6,7};
+    N = 3;
+    cost = {
+        {9, 2, 7},
+        {6, 4, 3},
+        {5, 8, 1}
+    };
 
-    for (int x : arr)
-        cout << sm.add(x) << " ";
+    dp.assign(1 << N, -1);
+
+    int minCost = solve(0);
+    cout << "Minimum cost: " << minCost << endl;
+
+    return 0;
 }
